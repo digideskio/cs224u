@@ -332,7 +332,7 @@ def train_classifier(
     # Parameters to grid-search over:
     parameters = {'C':priorlims, 'penalty':['l1','l2']}  
     # Cross-validation grid search to find the best hyper-parameters:     
-    clf = GridSearchCV(searchmod, parameters, cv=cv)
+    clf = GridSearchCV(searchmod, parameters, cv=cv, n_jobs=-1)
     clf.fit(feat_matrix, labels)
     params = clf.best_params_
 
