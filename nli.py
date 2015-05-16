@@ -337,7 +337,7 @@ def train_classifier(
     params = clf.best_params_
 
     # Establish the model we want using the parameters obtained from the search:
-    mod = LogisticRegression(fit_intercept=True, intercept_scaling=1, C=params['C'], penalty=params['penalty'])
+    mod = LogisticRegression(fit_intercept=True, intercept_scaling=1, C=params['C'], penalty=params['penalty'], multi_class='ovr', solver='lbfgs')
 
     ##### ASSESSMENT              
     # Cross-validation of our favored model; for other summaries, use different
@@ -395,7 +395,7 @@ if __name__ == '__main__': # Prevent this example from loading on import of this
         print readername
         print evaluate_trained_classifier(model=overlapmodel, reader=reader)
 
-
+'''
 # The `word_cross_product_features` model achieves better results,
 # since it has more information, but it takes a while to train --- and
 # look at how substantially the feature space is affected by feature
@@ -744,3 +744,4 @@ if __name__ == '__main__':
 # 
 # 2. Copy-and-paste of the report given by `evaluate_trained_network`
 # from your training and evaluation run.
+'''
