@@ -86,7 +86,7 @@ if sklearn.__version__[:4] != '0.16':
     sys.exit(2)
 
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.feature_selection import SelectFpr, chi2
+from sklearn.feature_selection import SelectFpr, chi2, RFE
 from sklearn.linear_model import LogisticRegression
 from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import cross_val_score
@@ -305,7 +305,8 @@ def train_classifier(
         feature_function=word_overlap_features,
         feature_selector=SelectFpr(chi2, alpha=0.05), # Use None to stop feature selection
         cv=10, # Number of folds used in cross-validation
-        priorlims=np.arange(.1, 3.1, .1)): # regularization priors to explore (we expect something around 1)
+        priorlims=np.arange(.1, 3.1, .1),
+        use_RFE=True): # regularization priors to explore (we expect something around 1)
     # Featurize the data:
     feats, labels = featurizer(reader=reader, feature_function=feature_function) 
     
@@ -325,19 +326,24 @@ def train_classifier(
         feat_matrix = feature_selector.fit_transform(X, labels)
     else:
         feat_matrix = X
-    
-    ##### HYPER-PARAMETER SEARCH
+
     # Define the basic model to use for parameter search:
-    searchmod = LogisticRegression(fit_intercept=True, intercept_scaling=1)
+    searchmod = LogisticRegression(fit_intercept=True, intercept_scaling=1, solver='lbfgs')
+
+    grid_search_feat_matrix = feat_matrix
+    if use_RFE:
+        grid_search_feat_matrix = RFE(searchmod, n_features_to_select=None, step=1, verbose=0).fit_transform(X, labels)
+
+    ##### HYPER-PARAMETER SEARCH
     # Parameters to grid-search over:
-    parameters = {'C':priorlims, 'penalty':['l1','l2']}  
+    parameters = {'C':priorlims, 'penalty':['l1','l2'], 'multi_class': ['ovr', 'multinomial']}
     # Cross-validation grid search to find the best hyper-parameters:     
-    clf = GridSearchCV(searchmod, parameters, cv=cv, n_jobs=-1)
-    clf.fit(feat_matrix, labels)
+    clf = GridSearchCV(searchmod, parameters, cv=cv)
+    clf.fit(grid_search_feat_matrix, labels)
     params = clf.best_params_
 
     # Establish the model we want using the parameters obtained from the search:
-    mod = LogisticRegression(fit_intercept=True, intercept_scaling=1, C=params['C'], penalty=params['penalty'], multi_class='ovr', solver='lbfgs')
+    mod = LogisticRegression(fit_intercept=True, intercept_scaling=1, C=params['C'], penalty=params['penalty'])
 
     ##### ASSESSMENT              
     # Cross-validation of our favored model; for other summaries, use different
