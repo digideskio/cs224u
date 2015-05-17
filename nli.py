@@ -712,7 +712,15 @@ if __name__ == '__main__':
     # A more conservative approach uses just the first-listed 
     # Synset, which should be the most frequent sense:
     print wn.synsets('puppy')[0].hypernyms()
-'''
+
+
+# Whatever your preferred approach, the logic is that $w_{1}$ entails
+# $w_{2}$ if a Synset consistent with $w_{2}$ is in the hypernym set
+# you define for $w_{1}$.
+# 
+# __Submit__:
+# 
+# 1. Your feature function.
 
 from nltk.corpus import wordnet as wn
 def word_entails_features(t1, t2):
@@ -746,20 +754,45 @@ if __name__ == '__main__': # Prevent this example from loading on import of this
         print evaluate_trained_classifier(model=entailsmodel, reader=reader)
 
 
-
-# Whatever your preferred approach, the logic is that $w_{1}$ entails
-# $w_{2}$ if a Synset consistent with $w_{2}$ is in the hypernym set
-# you define for $w_{1}$.
-# 
-# __Submit__:
-# 
-# 1. Your feature function.
-# 
 # 2. Copy-and-paste of the printed output of
 # `evaluate_trained_classifier`, using your feature function, trained
 # on `sick_train_reader`, with your preferred settings, and evaluated
 # on `sick_dev_reader`.
-# 
+
+
+#####################################################################################
+# RESULTS:                                                                          #
+#####################################################################################
+# Training Entails Model
+# Best model LogisticRegression(C=3.0000000000000004, class_weight=None, dual=False,
+#           fit_intercept=True, intercept_scaling=1, max_iter=100,
+#           multi_class='ovr', penalty='l1', random_state=None,
+#           solver='liblinear', tol=0.0001, verbose=0)
+# 54 features selected out of 752 total
+# F1 mean: 0.34 (+/- 0.05)
+# Evaluating Entails Model
+# ======================================================================
+# Train
+#              precision    recall  f1-score   support
+
+# CONTRADICTION       0.49      0.11      0.17       665
+#  ENTAILMENT       0.54      0.20      0.30      1299
+#     NEUTRAL       0.61      0.92      0.73      2536
+
+# avg / total       0.57      0.59      0.52      4500
+
+# ======================================================================
+# Dev
+#              precision    recall  f1-score   support
+
+# CONTRADICTION       0.19      0.05      0.08        74
+#  ENTAILMENT       0.40      0.12      0.19       144
+#     NEUTRAL       0.59      0.91      0.72       282
+
+# avg / total       0.48      0.56      0.47       500
+
+
+
 # For more on using the Python NLTK interface, see [these
 # notes](http://compprag.christopherpotts.net/wordnet.html).
 
@@ -797,11 +830,7 @@ if __name__ == '__main__': # Prevent this example from loading on import of this
 # __Submit__: 
 # 
 # 1. The two functions you wrote for the above tasks.
-# 
-# 2. Copy-and-paste of the printed output of
-# `evaluate_trained_classifier`, using your feature function, trained
-# on `sick_train_reader`, with your preferred settings, and evaluated
-# on `sick_dev_reader`.
+
 
 def tree2subphrases(tree):
     subphrases = [tree]
@@ -815,24 +844,67 @@ def subphrase_features(t1, t2):
     subphrases1 = tree2subphrases(t1)
     subphrases2 = tree2subphrases(t2)
 
-    count = 0
-    for s2, s1 in intertools.product(subphrases2, subphrases1):
+    pairs = []
+    for s2, s1 in itertools.product(subphrases2, subphrases1):
+        if isinstance(s1, tuple) and isinstance(s2, str):
+            continue
         if s1 in s2:
-            count += 1
+            pairs.append((s1, s2))
 
-    return count
+    return Counter(pairs)
 
 
 if __name__ == '__main__': # Prevent this example from loading on import of this module.
-
+    print('Training Subphrase Model')
     subphrasemodel = train_classifier(feature_function=subphrase_features, use_RFE=False)
 
+    print('Evaluating Subphrase Model')
     for readername, reader in (('Train', sick_train_reader), ('Dev', sick_dev_reader)):
         print "======================================================================"
         print readername
         print evaluate_trained_classifier(model=subphrasemodel, reader=reader)
 
 
+# 2. Copy-and-paste of the printed output of
+# `evaluate_trained_classifier`, using your feature function, trained
+# on `sick_train_reader`, with your preferred settings, and evaluated
+# on `sick_dev_reader`.
+
+
+#####################################################################################
+# RESULTS:                                                                          #
+#####################################################################################
+# Training Subphrase Model
+# Best model LogisticRegression(C=2.1000000000000001, class_weight=None, dual=False,
+#           fit_intercept=True, intercept_scaling=1, max_iter=100,
+#           multi_class='ovr', penalty='l1', random_state=None,
+#           solver='liblinear', tol=0.0001, verbose=0)
+# 944 features selected out of 20114 total
+# F1 mean: 0.54 (+/- 0.04)
+# Evaluating Subphrase Model
+# ======================================================================
+# Train
+#              precision    recall  f1-score   support
+
+# CONTRADICTION       0.86      0.64      0.73       665
+#  ENTAILMENT       0.75      0.57      0.65      1299
+#     NEUTRAL       0.78      0.92      0.84      2536
+
+# avg / total       0.78      0.78      0.77      4500
+
+# ======================================================================
+# Dev
+#              precision    recall  f1-score   support
+
+# CONTRADICTION       0.52      0.31      0.39        74
+#  ENTAILMENT       0.43      0.32      0.37       144
+#     NEUTRAL       0.66      0.82      0.73       282
+
+# avg / total       0.57      0.60      0.58       500
+
+
+
+'''
 # ### Problem 4
 # 
 # Write a new function, comparable to `glove_featurizer`, that employs
@@ -848,3 +920,4 @@ if __name__ == '__main__': # Prevent this example from loading on import of this
 # 
 # 2. Copy-and-paste of the report given by `evaluate_trained_network`
 # from your training and evaluation run.
+
