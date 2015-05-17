@@ -367,9 +367,9 @@ def train_classifier(
 
 # In[15]:
 
-if __name__ == '__main__': # Prevent this example from loading on import of this module.
+# if __name__ == '__main__': # Prevent this example from loading on import of this module.
     
-    overlapmodel = train_classifier(feature_function=word_overlap_features)
+#     overlapmodel = train_classifier(feature_function=word_overlap_features)
 
 
 # The following code assess the output of `train_classifier` on new
@@ -393,7 +393,7 @@ def evaluate_trained_classifier(model=None, reader=sick_dev_reader):
 # development data:
 
 # In[17]:
-
+'''
 if __name__ == '__main__': # Prevent this example from loading on import of this module.
     
     for readername, reader in (('Train', sick_train_reader), ('Dev', sick_dev_reader)):
@@ -401,7 +401,7 @@ if __name__ == '__main__': # Prevent this example from loading on import of this
         print readername
         print evaluate_trained_classifier(model=overlapmodel, reader=reader)
 
-'''
+
 # The `word_cross_product_features` model achieves better results,
 # since it has more information, but it takes a while to train --- and
 # look at how substantially the feature space is affected by feature
@@ -646,36 +646,37 @@ if __name__ == '__main__': # Prevent this example from loading on import of this
 # `word_overlap_features` and `RFE` (`n_features_to_select=None,
 # step=1, verbose=0`), with a grid-search that includes at least both
 # values of `multi_class`.
-'''
 
-'''
-Best model LogisticRegression(C=2.1000000000000001, class_weight=None, dual=False,
-          fit_intercept=True, intercept_scaling=1, max_iter=100,
-          multi_class='ovr', penalty='l1', random_state=None,
-          solver='liblinear', tol=0.0001, verbose=0)
-203 features selected out of 1397 total
-F1 mean: 0.46 (+/- 0.04)
-======================================================================
-Train
-             precision    recall  f1-score   support
 
-CONTRADICTION       0.65      0.40      0.49       665
- ENTAILMENT       0.60      0.37      0.46      1299
-    NEUTRAL       0.70      0.92      0.80      2536
+#####################################################################################
+# RESULTS:                                                                          #
+#####################################################################################
 
-avg / total       0.67      0.68      0.65      4500
+# Best model LogisticRegression(C=2.1000000000000001, class_weight=None, dual=False,
+#           fit_intercept=True, intercept_scaling=1, max_iter=100,
+#           multi_class='ovr', penalty='l1', random_state=None,
+#           solver='liblinear', tol=0.0001, verbose=0)
+# 203 features selected out of 1397 total
+# F1 mean: 0.46 (+/- 0.04)
+# ======================================================================
+# Train
+#              precision    recall  f1-score   support
 
-======================================================================
-Dev
-             precision    recall  f1-score   support
+# CONTRADICTION       0.65      0.40      0.49       665
+#  ENTAILMENT       0.60      0.37      0.46      1299
+#     NEUTRAL       0.70      0.92      0.80      2536
 
-CONTRADICTION       0.38      0.20      0.27        74
- ENTAILMENT       0.37      0.26      0.31       144
-    NEUTRAL       0.65      0.82      0.72       282
+# avg / total       0.67      0.68      0.65      4500
 
-avg / total       0.53      0.57      0.54       500
-'''
+# ======================================================================
+# Dev
+#              precision    recall  f1-score   support
 
+# CONTRADICTION       0.38      0.20      0.27        74
+#  ENTAILMENT       0.37      0.26      0.31       144
+#     NEUTRAL       0.65      0.82      0.72       282
+
+# avg / total       0.53      0.57      0.54       500
 
 
 
@@ -711,7 +712,7 @@ if __name__ == '__main__':
     # A more conservative approach uses just the first-listed 
     # Synset, which should be the most frequent sense:
     print wn.synsets('puppy')[0].hypernyms()
-
+'''
 
 from nltk.corpus import wordnet as wn
 def word_entails_features(t1, t2):
@@ -724,7 +725,9 @@ def word_entails_features(t1, t2):
     pairs = []
     for i in range(len(words1)):
         word1 = words1[i]
-        hypernyms = set([synset.hypernyms() for synset in synsets1[i]])
+        hypernyms = set()
+        for synset in synsets1[i]:
+            hypernyms = hypernyms.union(synset.hypernyms())
         for j in range(len(words2)):
             if  len(set(synsets2[j]).intersection(hypernyms)) > 0:
                 pairs.append((word1, words2[j]))
@@ -733,9 +736,10 @@ def word_entails_features(t1, t2):
 
 
 if __name__ == '__main__': # Prevent this example from loading on import of this module.
-
+    print('Training Entails Model')
     entailsmodel = train_classifier(feature_function=word_entails_features, use_RFE=False)
 
+    print('Evaluating Entails Model')
     for readername, reader in (('Train', sick_train_reader), ('Dev', sick_dev_reader)):
         print "======================================================================"
         print readername
