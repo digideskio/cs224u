@@ -639,12 +639,46 @@ if __name__ == '__main__': # Prevent this example from loading on import of this
 # 
 # 1. Your revised `train_classifier` function.
 #
+#  See above for the revised function
+#
 # 2. A copy-and-paste of all the messages printed by your revised
 # `train_classifier` when it is trained on `sick_train_reader` using
 # `word_overlap_features` and `RFE` (`n_features_to_select=None,
 # step=1, verbose=0`), with a grid-search that includes at least both
 # values of `multi_class`.
 '''
+
+'''
+Best model LogisticRegression(C=2.1000000000000001, class_weight=None, dual=False,
+          fit_intercept=True, intercept_scaling=1, max_iter=100,
+          multi_class='ovr', penalty='l1', random_state=None,
+          solver='liblinear', tol=0.0001, verbose=0)
+203 features selected out of 1397 total
+F1 mean: 0.46 (+/- 0.04)
+======================================================================
+Train
+             precision    recall  f1-score   support
+
+CONTRADICTION       0.65      0.40      0.49       665
+ ENTAILMENT       0.60      0.37      0.46      1299
+    NEUTRAL       0.70      0.92      0.80      2536
+
+avg / total       0.67      0.68      0.65      4500
+
+======================================================================
+Dev
+             precision    recall  f1-score   support
+
+CONTRADICTION       0.38      0.20      0.27        74
+ ENTAILMENT       0.37      0.26      0.31       144
+    NEUTRAL       0.65      0.82      0.72       282
+
+avg / total       0.53      0.57      0.54       500
+'''
+
+
+
+
 # ### Problem 2
 # 
 # [Python NLTK](http://www.nltk.org) has an excellent WordNet
@@ -700,7 +734,7 @@ def word_entails_features(t1, t2):
 
 if __name__ == '__main__': # Prevent this example from loading on import of this module.
 
-    entailsmodel = train_classifier(feature_function=word_entails_features)
+    entailsmodel = train_classifier(feature_function=word_entails_features, use_RFE=False)
 
     for readername, reader in (('Train', sick_train_reader), ('Dev', sick_dev_reader)):
         print "======================================================================"
@@ -765,6 +799,36 @@ if __name__ == '__main__': # Prevent this example from loading on import of this
 # on `sick_train_reader`, with your preferred settings, and evaluated
 # on `sick_dev_reader`.
 
+def tree2subphrases(tree):
+    subphrases = [tree]
+    if not isinstance(tree, str):
+        for part in tree:
+            subphrases += tree2subphrases(part)
+    return subphrases
+
+
+def subphrase_features(t1, t2):
+    subphrases1 = tree2subphrases(t1)
+    subphrases2 = tree2subphrases(t2)
+
+    count = 0
+    for s2, s1 in intertools.product(subphrases2, subphrases1):
+        if s1 in s2:
+            count += 1
+
+    return count
+
+
+if __name__ == '__main__': # Prevent this example from loading on import of this module.
+
+    subphrasemodel = train_classifier(feature_function=subphrase_features, use_RFE=False)
+
+    for readername, reader in (('Train', sick_train_reader), ('Dev', sick_dev_reader)):
+        print "======================================================================"
+        print readername
+        print evaluate_trained_classifier(model=subphrasemodel, reader=reader)
+
+
 # ### Problem 4
 # 
 # Write a new function, comparable to `glove_featurizer`, that employs
@@ -780,4 +844,3 @@ if __name__ == '__main__': # Prevent this example from loading on import of this
 # 
 # 2. Copy-and-paste of the report given by `evaluate_trained_network`
 # from your training and evaluation run.
-'''
