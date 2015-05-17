@@ -644,7 +644,7 @@ if __name__ == '__main__': # Prevent this example from loading on import of this
 # `word_overlap_features` and `RFE` (`n_features_to_select=None,
 # step=1, verbose=0`), with a grid-search that includes at least both
 # values of `multi_class`.
-
+'''
 # ### Problem 2
 # 
 # [Python NLTK](http://www.nltk.org) has an excellent WordNet
@@ -677,6 +677,36 @@ if __name__ == '__main__':
     # A more conservative approach uses just the first-listed 
     # Synset, which should be the most frequent sense:
     print wn.synsets('puppy')[0].hypernyms()
+
+
+from nltk.corpus import wordnet as wn
+def word_entails_features(t1, t2):
+
+    words1 = leaves(t1)
+    synsets1 = [wn.synsets(w) for w in words1]
+    words2 = leaves(t2)
+    synsets2 = [wn.synsets(w) for w in words2]
+
+    pairs = []
+    for i in range(len(words1)):
+        word1 = words1[i]
+        hypernyms = set([synset.hypernyms() for synset in synsets1[i]])
+        for j in range(len(words2)):
+            if  len(set(synsets2[j]).intersection(hypernyms)) > 0:
+                pairs.append((word1, words2[j]))
+
+    return Counter(pairs)
+
+
+if __name__ == '__main__': # Prevent this example from loading on import of this module.
+
+    entailsmodel = train_classifier(feature_function=word_entails_features)
+
+    for readername, reader in (('Train', sick_train_reader), ('Dev', sick_dev_reader)):
+        print "======================================================================"
+        print readername
+        print evaluate_trained_classifier(model=entailsmodel, reader=reader)
+
 
 
 # Whatever your preferred approach, the logic is that $w_{1}$ entails
